@@ -2,10 +2,14 @@ import { AutoClientInterface } from "@elizaos/client-auto";
 import { DiscordClientInterface } from "@elizaos/client-discord";
 import { TelegramClientInterface } from "@elizaos/client-telegram";
 import { TwitterClientInterface } from "@elizaos/client-twitter";
-import { Character, IAgentRuntime } from "@elizaos/core";
+import type { IAgentRuntime } from "@elizaos/core";
 
 export async function initializeClients(
-  character: Character,
+  character: {
+    name: string;
+    plugins: any[];
+    clients?: string[];
+  },
   runtime: IAgentRuntime
 ) {
   const clients = [];
