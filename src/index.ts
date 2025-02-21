@@ -33,6 +33,7 @@ import { Network } from "alchemy-sdk";
 import { ethers } from "ethers";
 import { PostgresDatabaseAdapter } from "@elizaos/adapter-postgres";
 import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
+import { alchemy } from "./alchemy.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +100,7 @@ async function startAgent(character: Character, directClient: DirectClient) {
     await db.init();
 
     const cache = initializeDbCache(character, db);
+
     const runtime = createAgent(character, db, cache, token);
 
     await runtime.initialize();
@@ -142,7 +144,6 @@ const checkPortAvailable = (port: number): Promise<boolean> => {
 
 const startAgents = async () => {
   const directClient = new DirectClient();
-  // setupDirectClient(directClient);
 
   directClient.app.post("/authenticate", async (req: any, res: any) => {
     try {
@@ -157,6 +158,11 @@ const startAgents = async () => {
       if (!isValid) {
         return res.status(401).json({ error: "Invalid signature" });
       }
+
+      const thinkAgent = await getThinkAgent(address);
+      // let characters = await getThinkAgent("NFT_ADDRESS");
+
+      const runtime = await startAgent(thinkAgent, directClient as DirectClient);
 
       res.json({
         success: true,
@@ -173,7 +179,7 @@ const startAgents = async () => {
   const args = parseArguments();
 
   // let charactersArg = args.characters || args.character;
-  let characters = [elizaCharacter, character];
+  let characters = [];
 
   // console.log("charactersArg", charactersArg);
   // if (charactersArg) {
@@ -213,11 +219,6 @@ const startAgents = async () => {
   }
 };
 
-startAgents().catch((error) => {
-  elizaLogger.error("Unhandled error in startAgents:", error);
-  process.exit(1);
-});
-
 const verifySignature = async (address: string, signature: string): Promise<boolean> => {
   try {
     // The message that was signed
@@ -233,3 +234,36 @@ const verifySignature = async (address: string, signature: string): Promise<bool
     return false;
   }
 };
+
+// startAgents().catch((error) => {
+//   elizaLogger.error("Unhandled error in startAgents:", error);
+//   process.exit(1);
+// });
+
+
+const getThinkAgent = async (nftAddress: string) => {
+  const character = elizaCharacter;
+  return character;
+  // get the nft from alchemy
+  // const nft = await alchemy.getNftMetadata(nftAddress);
+
+  // get the murur matrix from the nft metadata
+  // const mururMatrix = nft.metadata.attributes.find((attribute: any) => attribute.trait_type === "Murur Matrix");
+
+  // get the think agent from the murur matrix
+  // const thinkAgent = await getThinkAgentFromMururMatrix(mururMatrix);
+
+  // return thinkAgent;
+};
+
+
+const getThinkAgentFromMururMatrix = async (mururMatrix: string) => {
+  // turn the murur matrix into a character
+  // const character = await turnMururMatrixIntoCharacter(mururMatrix);
+
+  const character = elizaCharacter;
+  return character;
+};
+
+
+startAgents()
