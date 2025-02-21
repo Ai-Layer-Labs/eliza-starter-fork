@@ -1,6 +1,6 @@
 services:
     eliza:
-        command: ["pnpm", "start", "--character=./characters/eliza.character.json"]
+        command: [ "pnpm", "start", "--character=./characters/eliza.character.json" ]
         build:
             context: .
             dockerfile: Dockerfile
@@ -24,6 +24,8 @@ services:
             - SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
             - HELIUS_API_KEY=
             - SERVER_PORT=3000
+            - ALCHEMY_API_KEY=
+            - ALCHEMY_NETWORK=mainnet
         ports:
             - "3000:3000"
         restart: always

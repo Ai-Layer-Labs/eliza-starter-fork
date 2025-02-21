@@ -61,6 +61,11 @@ export function getTokenForProvider(
   character: Character
 ) {
   switch (provider) {
+    case ModelProviderName.TOGETHER:
+      return (
+        character.settings?.secrets?.TOGETHER_API_KEY ||
+        settings.TOGETHER_API_KEY
+      );
     case ModelProviderName.OPENAI:
       return (
         character.settings?.secrets?.OPENAI_API_KEY || settings.OPENAI_API_KEY
