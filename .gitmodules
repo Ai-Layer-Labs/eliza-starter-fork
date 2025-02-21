@@ -1,0 +1,3 @@
+[submodule "src/plugins/think"]
+	path = src/plugins/think
+	url = git@github.com:Ai-Layer-Labs/-elizaos-think.git
