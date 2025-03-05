@@ -14,6 +14,8 @@ import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import { createNodePlugin } from "@elizaos/plugin-node";
 import { solanaPlugin } from "@elizaos/plugin-solana";
 // import { walletNFTPlugin } from "./plugins/wallet-nft/index.ts";
+// Import THINK plugin dynamically to avoid circular dependencies
+// import thinkProtocolPlugin from "./plugins/think-protocol-plugin/src/index.ts";
 import fs from "fs";
 import net from "net";
 import path from "path";
@@ -29,11 +31,16 @@ import {
 } from "./config/index.ts";
 import { initializeDatabase } from "./database/index.ts";
 import { elizaCharacter } from "../characters/eliza.character.ts";
+import { metatronCharacter } from "../characters/metatron.character.ts";
 import { Network } from "alchemy-sdk";
 import { ethers } from "ethers";
 import { PostgresDatabaseAdapter } from "@elizaos/adapter-postgres";
 import { SqliteDatabaseAdapter } from "@elizaos/adapter-sqlite";
 import { alchemy } from "./alchemy.ts";
+// Import THINK plugin actions using CommonJS compatible approach
+// import * as agentActions from "./plugins/think-protocol-plugin/src/actions/agent-actions.ts";
+// import * as communicationActions from "./plugins/think-protocol-plugin/src/actions/communication-actions.ts";
+// import * as escrowActions from "./plugins/think-protocol-plugin/src/actions/escrow-actions.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,24 +70,54 @@ export function createAgent(
   // Initialize WalletNFTPlugin if ALCHEMY_API_KEY is present
   // const walletNFTPlugin =  new walletNFTPlugin()
 
-  return new AgentRuntime({
+  // We'll add the THINK plugin later after initialization to avoid circular dependencies
+  const plugins = [
+    bootstrapPlugin,
+    nodePlugin,
+    character.settings?.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
+    // walletNFTPlugin,
+  ].filter(Boolean);
+
+  // Create the agent runtime
+  const runtime = new AgentRuntime({
     databaseAdapter: db,
     token,
     modelProvider: character.modelProvider,
     evaluators: [],
     character,
-    plugins: [
-      bootstrapPlugin,
-      nodePlugin,
-      character.settings?.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
-      // walletNFTPlugin,
-    ].filter(Boolean),
+    plugins,
     providers: [],
     actions: [],
     services: [],
     managers: [],
     cacheManager: cache,
   });
+
+  // We'll load the THINK plugin later in the startAgents function
+  
+  return runtime;
+}
+
+// Add this function to load the THINK plugin actions after the agent is created
+async function loadThinkPluginActions(runtime) {
+  try {
+    // TEMPORARILY DISABLED UNTIL WE FIX THE ISSUES
+    // const thinkPlugin = {
+    //   name: 'think',
+    //   description: 'THINK Protocol integration for ElizaOS',
+    //   initialize: async (rt) => {
+    //     elizaLogger.info('Initializing simplified THINK Protocol plugin');
+    //   }
+    // };
+    
+    // if (runtime.plugins) {
+    //   runtime.plugins.push(thinkPlugin);
+    //   elizaLogger.success("THINK protocol plugin loaded successfully");
+    // }
+    elizaLogger.info("THINK plugin loading temporarily disabled for debugging");
+  } catch (error) {
+    elizaLogger.error("Failed to load THINK protocol plugin:", error);
+  }
 }
 
 async function startAgent(character: Character, directClient: DirectClient) {
@@ -104,6 +141,9 @@ async function startAgent(character: Character, directClient: DirectClient) {
     const runtime = createAgent(character, db, cache, token);
 
     await runtime.initialize();
+    
+    // Load the THINK protocol plugin actions after initialization
+    await loadThinkPluginActions(runtime);
 
     runtime.clients = await initializeClients(character, runtime as unknown as IAgentRuntime);
 
@@ -179,19 +219,45 @@ const startAgents = async () => {
   const args = parseArguments();
 
   // let charactersArg = args.characters || args.character;
-  let characters = [];
+  let characters = [elizaCharacter, metatronCharacter];
 
   // console.log("charactersArg", charactersArg);
   // if (charactersArg) {
   // characters = await loadCharacters(charactersArg);
   // }
-  console.log("characters", characters);
+  
   try {
+    // Dynamically load and initialize the THINK plugin
+    /*
+    try {
+      elizaLogger.info("Dynamically loading THINK protocol plugin...");
+      const thinkPluginModule = await import("./plugins/think-protocol-plugin/src/index.ts");
+      const thinkProtocolPlugin = thinkPluginModule.default;
+      
+      if (thinkProtocolPlugin && typeof thinkProtocolPlugin.initialize === 'function') {
+        elizaLogger.info("Initializing THINK protocol plugin...");
+        // Pass elizaLogger as the logger property
+        await thinkProtocolPlugin.initialize({ 
+          logger: elizaLogger,
+          getSetting: (key: string) => settings[key] || ""
+        });
+        elizaLogger.info("THINK protocol plugin initialized successfully");
+      }
+    } catch (error) {
+      elizaLogger.error("Failed to load or initialize THINK protocol plugin:", error);
+    }
+    */
+    
+    elizaLogger.info("THINK plugin loading disabled to resolve circular dependency issues");
+    
     for (const character of characters) {
+      elizaLogger.info("Starting agent for character:", character.name);
       await startAgent(character, directClient as DirectClient);
+      elizaLogger.info("Successfully started agent for character:", character.name);
     }
   } catch (error) {
     elizaLogger.error("Error starting agents:", error);
+    console.error("Detailed error:", error);
   }
 
   while (!(await checkPortAvailable(serverPort))) {
@@ -235,12 +301,6 @@ const verifySignature = async (address: string, signature: string): Promise<bool
   }
 };
 
-// startAgents().catch((error) => {
-//   elizaLogger.error("Unhandled error in startAgents:", error);
-//   process.exit(1);
-// });
-
-
 const getThinkAgent = async (nftAddress: string) => {
   const character = elizaCharacter;
   return character;
@@ -256,7 +316,6 @@ const getThinkAgent = async (nftAddress: string) => {
   // return thinkAgent;
 };
 
-
 const getThinkAgentFromMururMatrix = async (mururMatrix: string) => {
   // turn the murur matrix into a character
   // const character = await turnMururMatrixIntoCharacter(mururMatrix);
@@ -265,5 +324,7 @@ const getThinkAgentFromMururMatrix = async (mururMatrix: string) => {
   return character;
 };
 
-
-startAgents()
+startAgents().catch((error) => {
+  elizaLogger.error("Unhandled error in startAgents:", error);
+  process.exit(1);
+});

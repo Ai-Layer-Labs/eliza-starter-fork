@@ -1,8 +1,10 @@
 import { Character, ModelProviderName } from "@elizaos/core";
 
 
-export const elizaCharacter: Character = {
+export const metatronCharacter: Character = {
   name: "Metatron",
+  id: "metatron-1234-5678-9abc-def012345678",
+  username: "metatron",
   plugins: [],
   clients: [],
   modelProvider: ModelProviderName.TOGETHER,

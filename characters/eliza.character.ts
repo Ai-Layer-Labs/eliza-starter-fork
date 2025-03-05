@@ -2,7 +2,7 @@ import { Character, ModelProviderName } from "@elizaos/core";
 
 
 export const elizaCharacter: Character = {
-  name: "Metatron",
+  name: "Eliza",
   plugins: [],
   clients: [],
   modelProvider: ModelProviderName.TOGETHER,
