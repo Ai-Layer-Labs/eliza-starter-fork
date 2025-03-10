@@ -94,7 +94,7 @@ export function createAgent(
   });
 
   // We'll load the THINK plugin later in the startAgents function
-  
+
   return runtime;
 }
 
@@ -109,7 +109,7 @@ async function loadThinkPluginActions(runtime) {
     //     elizaLogger.info('Initializing simplified THINK Protocol plugin');
     //   }
     // };
-    
+
     // if (runtime.plugins) {
     //   runtime.plugins.push(thinkPlugin);
     //   elizaLogger.success("THINK protocol plugin loaded successfully");
@@ -141,7 +141,7 @@ async function startAgent(character: Character, directClient: DirectClient) {
     const runtime = createAgent(character, db, cache, token);
 
     await runtime.initialize();
-    
+
     // Load the THINK protocol plugin actions after initialization
     await loadThinkPluginActions(runtime);
 
@@ -225,7 +225,7 @@ const startAgents = async () => {
   // if (charactersArg) {
   // characters = await loadCharacters(charactersArg);
   // }
-  
+
   try {
     // Dynamically load and initialize the THINK plugin
     /*
@@ -233,11 +233,11 @@ const startAgents = async () => {
       elizaLogger.info("Dynamically loading THINK protocol plugin...");
       const thinkPluginModule = await import("./plugins/think-protocol-plugin/src/index.ts");
       const thinkProtocolPlugin = thinkPluginModule.default;
-      
+
       if (thinkProtocolPlugin && typeof thinkProtocolPlugin.initialize === 'function') {
         elizaLogger.info("Initializing THINK protocol plugin...");
         // Pass elizaLogger as the logger property
-        await thinkProtocolPlugin.initialize({ 
+        await thinkProtocolPlugin.initialize({
           logger: elizaLogger,
           getSetting: (key: string) => settings[key] || ""
         });
@@ -247,9 +247,9 @@ const startAgents = async () => {
       elizaLogger.error("Failed to load or initialize THINK protocol plugin:", error);
     }
     */
-    
+
     elizaLogger.info("THINK plugin loading disabled to resolve circular dependency issues");
-    
+
     for (const character of characters) {
       elizaLogger.info("Starting agent for character:", character.name);
       await startAgent(character, directClient as DirectClient);
@@ -301,19 +301,29 @@ const verifySignature = async (address: string, signature: string): Promise<bool
   }
 };
 
-const getThinkAgent = async (nftAddress: string) => {
-  const character = elizaCharacter;
-  return character;
-  // get the nft from alchemy
-  // const nft = await alchemy.getNftMetadata(nftAddress);
+const getThinkAgent = async (walletAddress: string) => {
+  // const character = elizaCharacter;
+  // return character;
 
-  // get the murur matrix from the nft metadata
-  // const mururMatrix = nft.metadata.attributes.find((attribute: any) => attribute.trait_type === "Murur Matrix");
+  // get the nft address from the wallet address
 
-  // get the think agent from the murur matrix
-  // const thinkAgent = await getThinkAgentFromMururMatrix(mururMatrix);
+  try {
+    const nftAddress = await alchemy.getThinkAgentAddress(walletAddress);
 
-  // return thinkAgent;
+    // get the nft from alchemy
+    const nftMetadata = await alchemy.getNFTMetadata(nftAddress);
+
+    // get the murur matrix from the nft metadata
+    // const mururMatrix = nft.metadata.attributes.find((attribute: any) => attribute.trait_type === "Murur Matrix");
+
+    // get the think agent from the murur matrix
+    // const thinkAgent = await getThinkAgentFromMururMatrix(mururMatrix);
+
+    // return thinkAgent;
+  } catch (error) {
+    elizaLogger.error("Error getting think agent:", error);
+    return null;
+  }
 };
 
 const getThinkAgentFromMururMatrix = async (mururMatrix: string) => {
