@@ -1,6 +1,6 @@
 import { Alchemy, Network, NftTokenType } from "alchemy-sdk";
 import dotenv from "dotenv";
-
+import { elizaLogger } from "@elizaos/core";
 dotenv.config();
 
 export class AlchemyApi {
@@ -47,7 +47,7 @@ export class AlchemyApi {
     const response = await this.alchemy.nft.getNftMetadata(this.config.contractAddress, address);
     // const nft = await this.alchemy.nft.getNftMetadata(address);
     // return nft;
-    console.log("nft metadata:", response);
+    elizaLogger.info("nft metadata:", response);
     // const metadata = response;
     return response;
     return {
@@ -60,7 +60,10 @@ export class AlchemyApi {
   }
 }
 
-export const alchemy = new AlchemyApi();
+const alchemy = new AlchemyApi();
+alchemy.initialize();
+
+export { alchemy };
 
 // alchemy.initialize();
 // console.log(alchemy.config);

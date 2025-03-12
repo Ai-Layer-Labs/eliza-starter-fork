@@ -21,7 +21,7 @@ import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import { initializeDbCache } from "./cache/index.ts";
-import { character } from "./character.ts";
+import { soulsGeneratorCharacter } from "./character.ts";
 import { startChat } from "./chat/index.ts";
 import { initializeClients } from "./clients/index.ts";
 import {
@@ -199,17 +199,36 @@ const startAgents = async () => {
         return res.status(401).json({ error: "Invalid signature" });
       }
 
-      const thinkAgent = await getThinkAgent(address);
-      // let characters = await getThinkAgent("NFT_ADDRESS");
+      const nfi = await verifyWalletHasNFI(address);
+      if (!nfi) {
+        return res.status(401).json({ error: "Wallet does not have a NFI" });
+      }
 
-      const runtime = await startAgent(thinkAgent, directClient as DirectClient);
+      // if the wallet has a NFI, then we need to get the soul's generator agent
+      const soulGeneratorAgent = soulsGeneratorCharacter;
+
+      // const thinkAgent = await getThinkAgent();
+      // let characters = await getThinkAgent("NFT_ADDRESS");
+      elizaLogger.info("soulGeneratorAgent:", soulGeneratorAgent);
+
+      const runtime = await startAgent(soulGeneratorAgent, directClient as DirectClient);
+
+      // Store wallet and NFT info in database
+      try {
+        await runtime.cacheManager.set(`${runtime.agentId}:walletAddress`, address);
+        await runtime.cacheManager.set(`${runtime.agentId}:nftAddress`, nfi);
+        elizaLogger.info("Stored wallet and NFT addresses in database for agent:", runtime.agentId);
+      } catch (dbError) {
+        elizaLogger.error("Failed to store wallet/NFT info in database:", dbError);
+      }
+
 
       res.json({
         success: true,
         address
       });
     } catch (error) {
-      console.error("Authentication error:", error);
+      elizaLogger.error("Authentication error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -219,7 +238,7 @@ const startAgents = async () => {
   const args = parseArguments();
 
   // let charactersArg = args.characters || args.character;
-  let characters = [elizaCharacter, metatronCharacter];
+  let characters = [];
 
   // console.log("charactersArg", charactersArg);
   // if (charactersArg) {
@@ -296,25 +315,31 @@ const verifySignature = async (address: string, signature: string): Promise<bool
     // Check if the recovered address matches the provided address
     return recoveredAddress.toLowerCase() === address.toLowerCase();
   } catch (error) {
-    console.error("Error verifying signature:", error);
+    elizaLogger.error("Error verifying signature:", error);
     return false;
   }
 };
 
-const getThinkAgent = async (walletAddress: string) => {
+const verifyWalletHasNFI = async (walletAddress: string) => {
   // const character = elizaCharacter;
   // return character;
 
   // get the nft address from the wallet address
-
+  elizaLogger.info("getting think agent for wallet address:", walletAddress);
   try {
     const nftAddress = await alchemy.getThinkAgentAddress(walletAddress);
+    elizaLogger.info("nftAddress:", nftAddress);
 
     // get the nft from alchemy
-    const nftMetadata = await alchemy.getNFTMetadata(nftAddress);
-
+    const nftMetadata = await alchemy.getNFTMetadata(nftAddress)
+    elizaLogger.info("nftMetadata:", nftMetadata);
     // get the murur matrix from the nft metadata
-    // const mururMatrix = nft.metadata.attributes.find((attribute: any) => attribute.trait_type === "Murur Matrix");
+    // const mururMatrix = nftMetadata.metadata.attributes.find((attribute: any) => attribute.trait_type === "Murur Matrix");
+    const mururMatrix = nftMetadata;
+    elizaLogger.info("mururMatrix:", mururMatrix);
+    const thinkAgent = await getThinkAgentFromMururMatrix(mururMatrix);
+    elizaLogger.info("return thinkAgent:", thinkAgent);
+    return thinkAgent;
 
     // get the think agent from the murur matrix
     // const thinkAgent = await getThinkAgentFromMururMatrix(mururMatrix);
@@ -326,11 +351,11 @@ const getThinkAgent = async (walletAddress: string) => {
   }
 };
 
-const getThinkAgentFromMururMatrix = async (mururMatrix: string) => {
+const getThinkAgentFromMururMatrix = async (mururMatrix: any) => {
   // turn the murur matrix into a character
   // const character = await turnMururMatrixIntoCharacter(mururMatrix);
 
-  const character = elizaCharacter;
+  const character = soulsGeneratorCharacter;
   return character;
 };
 
